@@ -13,10 +13,8 @@ import io.xireiki.sfa.compose.screen.qrscan.QRCodeCropArea
 import io.xireiki.sfa.database.Settings
 import io.xireiki.sfa.update.UpdateCheckException
 import io.xireiki.sfa.update.UpdateInfo
-import io.xireiki.sfa.update.UpdateSource
 import io.xireiki.sfa.update.UpdateState
 import io.xireiki.sfa.update.UpdateTrack
-import io.xireiki.sfa.update.checkFDroidUpdate
 
 object Vendor : VendorInterface {
     private const val TAG = "Vendor"
@@ -97,15 +95,10 @@ object Vendor : VendorInterface {
 
     override val hasCustomUpdate = true
 
-    override val updateSources = listOf(UpdateSource.GITHUB, UpdateSource.FDROID)
-
-    override fun checkUpdateAsync(): UpdateInfo? = when (UpdateSource.fromString(Settings.updateSource)) {
-        UpdateSource.FDROID -> checkFDroidUpdate(Application.application)
-        UpdateSource.GITHUB -> {
-            val track = UpdateTrack.fromString(Settings.updateTrack)
-            GitHubUpdateChecker().use { checker ->
-                checker.checkUpdate(track, Settings.githubToken)
-            }
+    override fun checkUpdateAsync(): UpdateInfo? {
+        val track = UpdateTrack.fromString(Settings.updateTrack)
+        return GitHubUpdateChecker().use { checker ->
+            checker.checkUpdate(track, Settings.githubToken)
         }
     }
 

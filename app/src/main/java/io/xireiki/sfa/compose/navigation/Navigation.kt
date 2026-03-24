@@ -29,7 +29,6 @@ import io.xireiki.sfa.compose.screen.profileoverride.PerAppProxyScreen
 import io.xireiki.sfa.compose.screen.settings.AppSettingsScreen
 import io.xireiki.sfa.compose.screen.settings.CoreSettingsScreen
 import io.xireiki.sfa.compose.screen.settings.EditRemoteServerScreen
-import io.xireiki.sfa.compose.screen.settings.FDroidMirrorScreen
 import io.xireiki.sfa.compose.screen.settings.PrivilegeSettingsScreen
 import io.xireiki.sfa.compose.screen.settings.ProfileOverrideScreen
 import io.xireiki.sfa.compose.screen.settings.RemoteControlScreen
@@ -619,16 +618,6 @@ fun NavHost(
             popExitTransition = slideOutToRight,
         ) {
             AppSettingsScreen(navController = navController, serviceStatus = serviceStatus)
-        }
-
-        composable(
-            route = "settings/fdroid_mirror",
-            enterTransition = slideInFromRight,
-            exitTransition = slideOutToLeft,
-            popEnterTransition = slideInFromLeft,
-            popExitTransition = slideOutToRight,
-        ) {
-            FDroidMirrorScreen(navController = navController)
         }
 
         composable(

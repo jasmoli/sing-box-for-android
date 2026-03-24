@@ -4,7 +4,6 @@ import android.app.Activity
 import androidx.camera.core.ImageAnalysis
 import io.xireiki.sfa.compose.screen.qrscan.QRCodeCropArea
 import io.xireiki.sfa.update.UpdateInfo
-import io.xireiki.sfa.update.UpdateSource
 
 interface VendorInterface {
     fun checkUpdate(activity: Activity, byUser: Boolean)
@@ -18,8 +17,6 @@ interface VendorInterface {
     fun isPerAppProxyAvailable(): Boolean = true
 
     val hasCustomUpdate: Boolean get() = false
-
-    val updateSources: List<UpdateSource> get() = listOf(UpdateSource.GITHUB)
 
     fun checkUpdateAsync(): UpdateInfo? = null
 
