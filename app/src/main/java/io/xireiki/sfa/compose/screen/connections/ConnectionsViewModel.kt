@@ -79,9 +79,9 @@ class ConnectionsViewModel :
             }.distinctUntilChanged().collect { (shouldConnect, _) ->
                 if (shouldConnect) {
                     updateState { copy(isLoading = true) }
-                    commandClient.connect()
+                    connectCommandClient()
                 } else {
-                    commandClient.disconnect()
+                    disconnectCommandClient()
                 }
             }
         }
@@ -94,6 +94,18 @@ class ConnectionsViewModel :
     override fun onCleared() {
         super.onCleared()
         commandClient.disconnect()
+    }
+
+    private fun connectCommandClient() {
+        viewModelScope.launch(Dispatchers.IO) {
+            commandClient.connect()
+        }
+    }
+
+    private fun disconnectCommandClient() {
+        viewModelScope.launch(Dispatchers.IO) {
+            commandClient.disconnect()
+        }
     }
 
     private suspend fun handleServiceStatusChange(status: Status) {
