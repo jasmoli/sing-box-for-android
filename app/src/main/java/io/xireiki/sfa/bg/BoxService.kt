@@ -278,6 +278,7 @@ class BoxService(private val service: Service, private val platformInterface: Pl
         serviceReload()
     }
 
+    @OptIn(DelicateCoroutinesApi::class)
     @RequiresApi(Build.VERSION_CODES.M)
     private fun serviceUpdateIdleMode() {
         if (::commandServer.isInitialized) {
