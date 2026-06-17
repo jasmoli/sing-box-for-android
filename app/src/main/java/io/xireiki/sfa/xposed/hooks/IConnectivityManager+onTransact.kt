@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.pm.PackageInfo
 import android.os.Binder
 import android.os.Parcel
-import de.robv.android.xposed.XposedHelpers
 import io.xireiki.sfa.BuildConfig
 import io.xireiki.sfa.bg.PackageEntry
 import io.xireiki.sfa.bg.ParceledListSlice
@@ -13,15 +12,19 @@ import io.xireiki.sfa.xposed.HookStatusKeys
 import io.xireiki.sfa.xposed.HookStatusStore
 import io.xireiki.sfa.xposed.PrivilegeSettingsStore
 
-class HookIConnectivityManagerOnTransact(private val classLoader: ClassLoader, private val context: Context?) : XHook {
+class HookIConnectivityManagerOnTransact(
+    private val api: XposedApi,
+    private val classLoader: ClassLoader,
+    private val context: Context?,
+) : XHook {
     private companion object {
         private const val SOURCE = "HookIConnectivityManagerOnTransact"
     }
 
     override fun injectHook() {
-        val stub = XposedHelpers.findClass("android.net.IConnectivityManager\$Stub", classLoader)
-        val descriptor = XposedHelpers.getStaticObjectField(stub, "DESCRIPTOR") as String
-        XposedHelpers.findAndHookMethod(
+        val stub = api.findClass("android.net.IConnectivityManager\$Stub", classLoader)
+        val descriptor = api.getStaticObjectField(stub, "DESCRIPTOR") as String
+        api.findAndHookMethod(
             stub,
             "onTransact",
             Int::class.javaPrimitiveType,
