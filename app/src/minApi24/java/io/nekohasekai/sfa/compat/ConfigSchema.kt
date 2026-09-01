@@ -40,6 +40,8 @@ data class ValueSuggestion(
 )
 
 class ConfigSchema(private val root: JsonObject) {
+    // Public root for graphical editor; consumers should not mutate the result.
+    fun rootObject(): JsonObject = root
 
     companion object {
         private val loadAccess = Any()
