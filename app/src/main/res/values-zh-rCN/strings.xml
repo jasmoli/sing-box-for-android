@@ -1059,7 +1059,7 @@
     <string name="graphical_field_propagation_timeout">传播超时</string>
     <string name="graphical_field_protect_path">保护路径</string>
     <string name="graphical_field_protocol">协议</string>
-    <string name="graphical_field_provider">提供方</string>
+    <string name="graphical_field_provider">提供者</string>
     <string name="graphical_field_psk">PSK</string>
     <string name="graphical_field_public_key">公钥</string>
     <string name="graphical_field_pull_filters">拉取过滤器</string>
@@ -1286,6 +1286,15 @@
     <string name="graphical_field_rule">规则</string>
     <string name="graphical_field_search_domain">搜索域名</string>
     <string name="graphical_field_stun_server">STUN 服务器</string>
+    <string name="graphical_field_providers">出站提供者</string>
+    <string name="graphical_field_use_all_providers">使用全部出站提供者</string>
+    <string name="graphical_field_exclude">排除</string>
+    <string name="graphical_field_include">仅保留</string>
+    <string name="graphical_field_download_detour">下载通道</string>
+    <string name="graphical_field_health_check">健康检查</string>
+    <string name="graphical_field_tag_prefix">标签前缀</string>
+    <string name="graphical_field_tag_suffix">标签后缀</string>
+    <string name="graphical_field_outbound_override">出站覆盖</string>
     <string name="graphical_more_options">更多选项</string>
     <string name="graphical_more_options_hint">证书、NTP、服务等高级设置</string>
     <string name="graphical_editor">图形化编辑器</string>
