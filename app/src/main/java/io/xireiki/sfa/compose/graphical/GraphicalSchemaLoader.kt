@@ -272,7 +272,6 @@ class GraphicalSchemaLoader(
             description = description,
             required = required,
             deprecated = deprecated,
-            elementTitle = "Item",
             elements = children,
             elementSchema = itemSchema,
             isPrimitiveElement = isPrimitiveElement,
@@ -300,11 +299,8 @@ class GraphicalSchemaLoader(
         val currentType = (configValue as? JsonObject)?.get(discriminator)
             ?.let { (it as? JsonPrimitive)?.contentOrNull }
             ?: options.firstOrNull()
-        val matchedVariant = variants.firstOrNull { variant ->
-            val propertySchema = (variant["properties"] as? JsonObject)?.get(discriminator) as? JsonObject
-            val resolvedProperty = resolve(propertySchema)
-            (resolvedProperty["const"] as? JsonPrimitive)?.contentOrNull == currentType
-        } ?: variants.first()
+        // options[i] describes variants[i], so the label index is the variant index.
+        val matchedVariant = variants.getOrNull(options.indexOf(currentType)) ?: variants.first()
         val childSchema = matchedVariant["properties"] as? JsonObject ?: JsonObject(emptyMap())
         val children = mutableListOf<GraphicalSchemaNode>()
         for ((name, childS) in childSchema) {
@@ -319,6 +315,26 @@ class GraphicalSchemaLoader(
                 required = false,
             )
         }
+        // A variant may itself end in a second union over the same JSON object
+        // (a rule's match conditions followed by its action), so the nested union
+        // keeps the parent path.
+        val tailVariants = ((matchedVariant["oneOf"] ?: matchedVariant["anyOf"]) as? JsonArray)
+            ?.let { flattenLeaves(it.filterIsInstance<JsonObject>(), 0) }
+            .orEmpty()
+        val tailDiscriminator = detectDiscriminator(tailVariants)?.takeIf { it != discriminator }
+        if (tailDiscriminator != null) {
+            children += buildDiscriminatedUnion(
+                variants = tailVariants,
+                configValue = configValue,
+                path = path,
+                propertyName = tailDiscriminator,
+                title = labeler.titleFor(path, tailDiscriminator, JsonObject(emptyMap())),
+                description = null,
+                required = false,
+                deprecated = false,
+                discriminator = tailDiscriminator,
+            )
+        }
         return GraphicalSchemaNode.DiscriminatedUnion(
             path = path,
             propertyName = propertyName,
@@ -330,6 +346,12 @@ class GraphicalSchemaLoader(
             options = options,
             currentType = currentType,
             currentChildren = children,
+            // Property keys each variant owns. A union can share its JSON object
+            // with fields it does not own (a rule's match conditions sit beside
+            // its action), so switching type may only clear these.
+            variantKeys = options.indices.associate { index ->
+                options[index] to (variants[index]["properties"] as? JsonObject)?.keys.orEmpty()
+            },
         )
     }
 
@@ -350,11 +372,38 @@ class GraphicalSchemaLoader(
         var depth = 0
         while (depth < 8) {
             val obj = current as? JsonObject ?: return JsonObject(emptyMap())
-            val ref = (obj["\$ref"] as? JsonPrimitive)?.contentOrNull ?: return obj
+            val ref = (obj["\$ref"] as? JsonPrimitive)?.contentOrNull ?: return mergeAllOf(obj)
             current = definitions?.get(ref.substringAfterLast('/'))
             depth++
         }
         return JsonObject(emptyMap())
+    }
+
+    // allOf means "satisfy every member", so fold the members' properties into the
+    // parent and the builder sees one plain object. Route/DNS rules are the only
+    // users: match conditions in allOf[0], action variants behind allOf[1].$ref,
+    // which is why an unmerged rule renders with no fields at all.
+    private fun mergeAllOf(node: JsonObject): JsonObject {
+        val members = (node["allOf"] as? JsonArray)?.filterIsInstance<JsonObject>()
+        if (members.isNullOrEmpty()) return node
+        val merged = LinkedHashMap<String, JsonElement>(node)
+        merged.remove("allOf")
+        val properties = LinkedHashMap<String, JsonElement>()
+        val required = mutableListOf<JsonElement>()
+        (node["properties"] as? JsonObject)?.let { properties.putAll(it) }
+        (node["required"] as? JsonArray)?.let { required.addAll(it) }
+        for (member in members) {
+            val resolved = resolve(member)
+            (resolved["properties"] as? JsonObject)?.let { properties.putAll(it) }
+            (resolved["required"] as? JsonArray)?.let { required.addAll(it) }
+            // Keep a member's variant list so a discriminated tail stays selectable.
+            for (key in arrayOf("oneOf", "anyOf")) {
+                if (!merged.containsKey(key)) resolved[key]?.let { merged[key] = it }
+            }
+        }
+        if (properties.isNotEmpty()) merged["properties"] = JsonObject(properties)
+        if (required.isNotEmpty()) merged["required"] = JsonArray(required)
+        return JsonObject(merged)
     }
 
     private data class SplitVariants(val main: JsonObject?, val variants: List<JsonObject>)
