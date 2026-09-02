@@ -125,17 +125,18 @@ fun FieldRenderer(
     onRemoveArray: (path: String, index: Int) -> Unit = { _, _ -> },
     onSelectType: (path: String, discriminator: String, newType: String) -> Unit = { _, _, _ -> },
     onRemoveItem: (() -> Unit)? = null,
+    itemLabel: String? = null,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxWidth().padding(vertical = 4.dp)) {
         when (node) {
-            is GraphicalSchemaNode.StringField -> StringControl(node, onValueChange)
-            is GraphicalSchemaNode.IntegerField -> IntegerControl(node, onValueChange)
-            is GraphicalSchemaNode.NumberField -> NumberControl(node, onValueChange)
-            is GraphicalSchemaNode.BooleanField -> BooleanControl(node, onValueChange)
-            is GraphicalSchemaNode.ObjectField -> ObjectControl(node, onAddArray, onRemoveArray, onValueChange, onSelectType, onRemoveItem)
-            is GraphicalSchemaNode.ArrayField -> ArrayControl(node, onAddArray, onRemoveArray, onValueChange, onSelectType)
-            is GraphicalSchemaNode.DiscriminatedUnion -> DiscriminatedUnionControl(node, onAddArray, onRemoveArray, onValueChange, onSelectType, onRemoveItem)
+            is GraphicalSchemaNode.StringField -> StringControl(node, itemLabel, onValueChange)
+            is GraphicalSchemaNode.IntegerField -> IntegerControl(node, itemLabel, onValueChange)
+            is GraphicalSchemaNode.NumberField -> NumberControl(node, itemLabel, onValueChange)
+            is GraphicalSchemaNode.BooleanField -> BooleanControl(node, itemLabel, onValueChange)
+            is GraphicalSchemaNode.ObjectField -> ObjectControl(node, itemLabel, onAddArray, onRemoveArray, onValueChange, onSelectType, onRemoveItem)
+            is GraphicalSchemaNode.ArrayField -> ArrayControl(node, itemLabel, onAddArray, onRemoveArray, onValueChange, onSelectType, onRemoveItem)
+            is GraphicalSchemaNode.DiscriminatedUnion -> DiscriminatedUnionControl(node, itemLabel, onAddArray, onRemoveArray, onValueChange, onSelectType, onRemoveItem)
         }
         node.description?.takeIf { it.isNotBlank() }?.let { desc ->
             Text(
@@ -157,12 +158,10 @@ fun FieldRenderer(
 }
 
 @Composable
-private fun FieldTitle(node: GraphicalSchemaNode) {
-    val label = node.propertyName?.let { resolveLabel(it, node.title) } ?: node.title
-
+private fun FieldTitle(node: GraphicalSchemaNode, itemLabel: String? = null) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(
-            text = label,
+            text = itemLabel ?: nodeLabel(node),
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.onSurface,
             textDecoration = if (node.deprecated) TextDecoration.LineThrough else null,
@@ -179,10 +178,14 @@ private fun FieldTitle(node: GraphicalSchemaNode) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun StringControl(node: GraphicalSchemaNode.StringField, onValueChange: (String, Any?) -> Unit) {
+private fun StringControl(
+    node: GraphicalSchemaNode.StringField,
+    itemLabel: String?,
+    onValueChange: (String, Any?) -> Unit,
+) {
     if (node.enumValues.isNotEmpty()) {
         EnumDropdown(
-            label = node.title,
+            label = itemLabel ?: nodeLabel(node),
             value = node.value,
             options = node.enumValues,
             required = node.required,
@@ -193,7 +196,7 @@ private fun StringControl(node: GraphicalSchemaNode.StringField, onValueChange: 
     OutlinedTextField(
         value = node.value,
         onValueChange = { onValueChange(node.path, it) },
-        label = { FieldTitle(node) },
+        label = { FieldTitle(node, itemLabel) },
         modifier = Modifier.fillMaxWidth(),
         singleLine = true,
         visualTransformation = if (node.isSecret) PasswordVisualTransformation() else VisualTransformation.None,
@@ -202,7 +205,11 @@ private fun StringControl(node: GraphicalSchemaNode.StringField, onValueChange: 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun IntegerControl(node: GraphicalSchemaNode.IntegerField, onValueChange: (String, Any?) -> Unit) {
+private fun IntegerControl(
+    node: GraphicalSchemaNode.IntegerField,
+    itemLabel: String?,
+    onValueChange: (String, Any?) -> Unit,
+) {
     val text = node.value?.toString() ?: ""
     OutlinedTextField(
         value = text,
@@ -210,7 +217,7 @@ private fun IntegerControl(node: GraphicalSchemaNode.IntegerField, onValueChange
             val parsed = raw.toLongOrNull()
             onValueChange(node.path, parsed)
         },
-        label = { FieldTitle(node) },
+        label = { FieldTitle(node, itemLabel) },
         modifier = Modifier.fillMaxWidth(),
         singleLine = true,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -219,14 +226,18 @@ private fun IntegerControl(node: GraphicalSchemaNode.IntegerField, onValueChange
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun NumberControl(node: GraphicalSchemaNode.NumberField, onValueChange: (String, Any?) -> Unit) {
+private fun NumberControl(
+    node: GraphicalSchemaNode.NumberField,
+    itemLabel: String?,
+    onValueChange: (String, Any?) -> Unit,
+) {
     val text = node.value?.toString() ?: ""
     OutlinedTextField(
         value = text,
         onValueChange = { raw ->
             onValueChange(node.path, raw.toDoubleOrNull())
         },
-        label = { FieldTitle(node) },
+        label = { FieldTitle(node, itemLabel) },
         modifier = Modifier.fillMaxWidth(),
         singleLine = true,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
@@ -234,13 +245,17 @@ private fun NumberControl(node: GraphicalSchemaNode.NumberField, onValueChange: 
 }
 
 @Composable
-private fun BooleanControl(node: GraphicalSchemaNode.BooleanField, onValueChange: (String, Any?) -> Unit) {
+private fun BooleanControl(
+    node: GraphicalSchemaNode.BooleanField,
+    itemLabel: String?,
+    onValueChange: (String, Any?) -> Unit,
+) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        FieldTitle(node)
+        FieldTitle(node, itemLabel)
         Switch(
             checked = node.value,
             onCheckedChange = { onValueChange(node.path, it) },
@@ -301,15 +316,15 @@ private fun EnumDropdown(
 @Composable
 private fun ObjectControl(
     node: GraphicalSchemaNode.ObjectField,
+    itemLabel: String?,
     onAddArray: (String) -> Unit,
     onRemoveArray: (String, Int) -> Unit,
     onValueChange: (String, Any?) -> Unit,
     onSelectType: (String, String, String) -> Unit,
     onRemoveItem: (() -> Unit)? = null,
 ) {
-    val label = node.propertyName?.let { resolveLabel(it, node.title) } ?: node.title
     CollapsibleHeader(
-        title = label,
+        title = itemLabel ?: nodeLabel(node),
         description = node.description,
         deprecated = node.deprecated,
         required = node.required,
@@ -332,26 +347,71 @@ private fun ObjectControl(
 }
 
 @Composable
-private fun resolveLabel(propertyName: String, fallback: String): String {
+private fun resolveLabel(propertyName: String, fallback: String, alternateKey: String? = null): String {
     val ctx = LocalContext.current
-    val resId = ctx.resources.getIdentifier("graphical_field_$propertyName", "string", ctx.packageName)
+    var resId = ctx.resources.getIdentifier("graphical_field_$propertyName", "string", ctx.packageName)
+    if (resId == 0 && alternateKey != null) {
+        resId = ctx.resources.getIdentifier("graphical_field_$alternateKey", "string", ctx.packageName)
+    }
     return if (resId != 0) stringResource(resId) else fallback
+}
+
+@Composable
+private fun nodeLabel(node: GraphicalSchemaNode): String = node.propertyName?.let { resolveLabel(it, node.title) } ?: node.title
+
+// Array children are labelled with their 1-based position in angle brackets plus
+// the singular of the array's own name, so "inbounds[2]" reads "<3> 入站". A
+// tagged element uses its tag instead: "<3> tp入站".
+@Composable
+private fun arrayItemLabel(node: GraphicalSchemaNode.ArrayField, index: Int, tag: String?): String {
+    val name = tag?.takeIf { it.isNotBlank() }
+        ?: node.propertyName?.let { resolveLabel(singularOf(it), node.title, alternateKey = it) }
+        ?: node.title
+    return "<${index + 1}> $name"
+}
+
+// Naive on purpose: a wrong guess ("dns" -> "dn") simply finds no string resource
+// and resolveLabel falls back to the plural key.
+private fun singularOf(name: String): String = when {
+    name.endsWith("ies") -> name.dropLast(3) + "y"
+    name.endsWith("sses") || name.endsWith("ches") || name.endsWith("shes") || name.endsWith("xes") -> name.dropLast(2)
+    name.endsWith("s") && !name.endsWith("ss") -> name.dropLast(1)
+    else -> name
+}
+
+// An element's own "tag" field, when it has one (inbounds, outbounds, endpoints...).
+private fun tagOf(node: GraphicalSchemaNode): String? {
+    val children = when (node) {
+        is GraphicalSchemaNode.ObjectField -> node.children
+        is GraphicalSchemaNode.DiscriminatedUnion -> node.currentChildren
+        else -> return null
+    }
+    return children.firstNotNullOfOrNull { child ->
+        (child as? GraphicalSchemaNode.StringField)
+            ?.takeIf { it.propertyName == "tag" }
+            ?.value
+            ?.takeIf { it.isNotBlank() }
+    }
 }
 
 @Composable
 private fun ArrayControl(
     node: GraphicalSchemaNode.ArrayField,
+    itemLabel: String?,
     onAdd: (path: String) -> Unit,
     onRemove: (path: String, index: Int) -> Unit,
     onValueChange: (String, Any?) -> Unit,
     onSelectType: (String, String, String) -> Unit,
+    onRemoveItem: (() -> Unit)? = null,
 ) {
-    val label = node.propertyName?.let { resolveLabel(it, node.title) } ?: node.title
     CollapsibleHeader(
-        title = label,
+        title = itemLabel ?: nodeLabel(node),
         description = node.description,
         deprecated = node.deprecated,
         required = node.required,
+        trailingAction = onRemoveItem?.let { rm ->
+            { IconButton(onClick = rm) { Icon(Icons.Default.Close, stringResource(R.string.graphical_array_remove), tint = MaterialTheme.colorScheme.error) } }
+        },
     ) {
         Column {
             // Add button always visible (even when array is empty)
@@ -385,6 +445,7 @@ private fun ArrayControl(
                             onRemoveArray = onRemove,
                             onSelectType = onSelectType,
                             onRemoveItem = { onRemove(node.path, index) },
+                            itemLabel = arrayItemLabel(node, index, tagOf(child)),
                         )
                         if (index < node.elements.size - 1) {
                             HorizontalDivider(
@@ -403,15 +464,15 @@ private fun ArrayControl(
 @Composable
 private fun DiscriminatedUnionControl(
     node: GraphicalSchemaNode.DiscriminatedUnion,
+    itemLabel: String?,
     onAddArray: (String) -> Unit,
     onRemoveArray: (String, Int) -> Unit,
     onValueChange: (String, Any?) -> Unit,
     onSelectType: (path: String, discriminator: String, newType: String) -> Unit,
     onRemoveItem: (() -> Unit)? = null,
 ) {
-    val label = node.propertyName?.let { resolveLabel(it, node.title) } ?: node.title
     CollapsibleHeader(
-        title = label,
+        title = itemLabel ?: nodeLabel(node),
         description = node.description,
         deprecated = node.deprecated,
         required = node.required,
@@ -421,7 +482,7 @@ private fun DiscriminatedUnionControl(
     ) {
         Column {
             EnumDropdown(
-                label = node.discriminator,
+                label = resolveLabel(node.discriminator, node.discriminator),
                 value = node.currentType ?: node.options.first(),
                 options = node.options,
                 required = node.required,
