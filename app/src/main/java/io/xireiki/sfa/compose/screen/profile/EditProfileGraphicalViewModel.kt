@@ -136,13 +136,17 @@ class EditProfileGraphicalViewModel(private val profileId: Long) : ViewModel() {
     }
 
     fun onSelectType(path: String, discriminator: String, newType: String) {
-        // Switching the discriminator invalidates every sibling field of the old
-        // variant, so keep only the discriminator itself.
-        workingRoot = JsonPath.set(
-            workingRoot,
-            path,
-            JsonObject(mapOf(discriminator to JsonPrimitive(newType))),
-        )
+        val node = findUnion(path, discriminator)
+        val existing = JsonPath.get(workingRoot, path) as? JsonObject
+        // Drop the outgoing variant's own fields, keep everything the union does
+        // not own: a rule's match conditions share the object with its action.
+        val stale = node?.variantKeys?.get(node.currentType).orEmpty() - discriminator
+        val kept = LinkedHashMap<String, JsonElement>()
+        existing?.forEach { (key, value) ->
+            if (key != discriminator && key !in stale) kept[key] = value
+        }
+        kept[discriminator] = JsonPrimitive(newType)
+        workingRoot = JsonPath.set(workingRoot, path, JsonObject(kept))
         publishEdit()
     }
 
@@ -221,10 +225,20 @@ class EditProfileGraphicalViewModel(private val profileId: Long) : ViewModel() {
         }
     }
 
-    private fun findNode(path: String): GraphicalSchemaNode? {
+    private fun findNode(path: String): GraphicalSchemaNode? = firstNode { it.path == path }
+
+    // Nested unions over one JSON object share a path (a rule's type and its
+    // action), so the discriminator is what tells them apart.
+    private fun findUnion(path: String, discriminator: String): GraphicalSchemaNode.DiscriminatedUnion? = firstNode {
+        it is GraphicalSchemaNode.DiscriminatedUnion &&
+            it.path == path &&
+            it.discriminator == discriminator
+    } as? GraphicalSchemaNode.DiscriminatedUnion
+
+    private fun firstNode(predicate: (GraphicalSchemaNode) -> Boolean): GraphicalSchemaNode? {
         fun search(nodes: List<GraphicalSchemaNode>): GraphicalSchemaNode? {
             for (n in nodes) {
-                if (n.path == path) return n
+                if (predicate(n)) return n
                 val children = when (n) {
                     is GraphicalSchemaNode.ObjectField -> n.children
                     is GraphicalSchemaNode.ArrayField -> n.elements

@@ -90,7 +90,6 @@ sealed class GraphicalSchemaNode {
         override val required: Boolean = false,
         override val deprecated: Boolean = false,
         override val isAdvanced: Boolean = false,
-        val elementTitle: String,
         val elements: List<GraphicalSchemaNode>,
         val elementSchema: JsonObject,
         val isPrimitiveElement: Boolean,
@@ -108,6 +107,10 @@ sealed class GraphicalSchemaNode {
         val options: List<String>,
         val currentType: String?,
         val currentChildren: List<GraphicalSchemaNode>,
+        // Property keys per variant. A union can share its JSON object with fields
+        // it does not own (a rule's match conditions sit beside its action), so
+        // switching type may only clear the outgoing variant's own keys.
+        val variantKeys: Map<String, Set<String>> = emptyMap(),
     ) : GraphicalSchemaNode()
 }
 
