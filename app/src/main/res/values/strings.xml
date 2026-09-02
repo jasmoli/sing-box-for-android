@@ -1365,6 +1365,15 @@
     <string name="graphical_field_rule">Rule</string>
     <string name="graphical_field_search_domain">Search Domain</string>
     <string name="graphical_field_stun_server">STUN Server</string>
+    <string name="graphical_field_providers">Providers</string>
+    <string name="graphical_field_use_all_providers">Use All Providers</string>
+    <string name="graphical_field_exclude">Exclude</string>
+    <string name="graphical_field_include">Include</string>
+    <string name="graphical_field_download_detour">Download Detour</string>
+    <string name="graphical_field_health_check">Health Check</string>
+    <string name="graphical_field_tag_prefix">Tag Prefix</string>
+    <string name="graphical_field_tag_suffix">Tag Suffix</string>
+    <string name="graphical_field_outbound_override">Outbound Override</string>
     <string name="graphical_more_options">More Options</string>
     <string name="graphical_more_options_hint">Certificates, NTP, Services and other advanced settings</string>
 </resources>
