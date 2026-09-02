@@ -1289,6 +1289,15 @@
     <string name="graphical_field_rule">規則</string>
     <string name="graphical_field_search_domain">搜尋網域</string>
     <string name="graphical_field_stun_server">STUN 伺服器</string>
+    <string name="graphical_field_providers">出站提供者</string>
+    <string name="graphical_field_use_all_providers">使用全部出站提供者</string>
+    <string name="graphical_field_exclude">排除</string>
+    <string name="graphical_field_include">僅保留</string>
+    <string name="graphical_field_download_detour">下載通道</string>
+    <string name="graphical_field_health_check">健康檢查</string>
+    <string name="graphical_field_tag_prefix">標籤前綴</string>
+    <string name="graphical_field_tag_suffix">標籤後綴</string>
+    <string name="graphical_field_outbound_override">出站覆寫</string>
     <string name="graphical_more_options">更多選項</string>
     <string name="graphical_more_options_hint">證書、NTP、服務等進階設定</string>
     <string name="graphical_editor">圖形化編輯器</string>
